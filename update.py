@@ -28,8 +28,8 @@ def update_azure(bento_bundle_path, deployment_name, config_json):
         resource_group_name,
         storage_account_name,
         function_plan_name,
-        acr_name,
         function_name,
+        acr_name,
     ) = generate_resource_names(deployment_name)
 
     run_shell_command(

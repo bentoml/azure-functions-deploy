@@ -2,7 +2,7 @@
   "location": "location",
   "min_instances": 1,
   "max_burst": 20,
-  "premium_plan_sku": "EP1",
+  "function_sku": "B1",
   "function_auth_level": "anonymous",
   "acr_sku": "Standard"
 }

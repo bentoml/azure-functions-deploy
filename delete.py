@@ -13,7 +13,7 @@ def delete_azure(deployment_name):
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         raise Exception(
-            "Please provide bento_bundle_path deployment_name and configuration json"
+            "Please provide deployment_name"
         )
     deployment_name = sys.argv[1]
 
