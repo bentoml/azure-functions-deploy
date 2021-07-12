@@ -31,6 +31,54 @@ def run_shell_command(command, cwd=None, env=None, shell_mode=False):
         )
 
 
+def set_cors_settings(function_name, resource_group_name):
+    # To allow all, use `*` and  remove all other origins in the list.
+    cors_list_result, _ = run_shell_command(
+        command=[
+            'az',
+            'functionapp',
+            'cors',
+            'show',
+            '--name',
+            function_name,
+            '--resource-group',
+            resource_group_name,
+        ],
+    )
+
+    if cors_list_result != '':
+        for origin_url in cors_list_result['allowedOrigins']:
+            run_shell_command(
+                command=[
+                    'az',
+                    'functionapp',
+                    'cors',
+                    'remove',
+                    '--name',
+                    function_name,
+                    '--resource-group',
+                    resource_group_name,
+                    '--allowed-origins',
+                    origin_url,
+                ],
+            )
+
+        run_shell_command(
+            command=[
+                'az',
+                'functionapp',
+                'cors',
+                'add',
+                '--name',
+                function_name,
+                '--resource-group',
+                resource_group_name,
+                '--allowed-origins',
+                '*',
+            ],
+        )
+
+
 def get_configuration_value(config_file):
     with open(config_file, "r") as file:
         configuration = json.loads(file.read())
