@@ -1,7 +1,6 @@
 import os
 import sys
 from bentoml.saved_bundle import load_bento_service_metadata
-from bentoml.yatai.deployment.azure_functions.operator import _set_cors_settings
 from bentoml.configuration import LAST_PYPI_RELEASE_VERSION
 
 from azure import (
@@ -14,6 +13,7 @@ from utils import (
     run_shell_command,
     build_docker_image,
     push_docker_image_to_repository,
+    set_cors_settings,
 )
 
 
@@ -31,8 +31,8 @@ def deploy_to_azure(bento_bundle_path, deployment_name, config_json):
         resource_group_name,
         storage_account_name,
         function_plan_name,
-        acr_name,
         function_name,
+        acr_name,
     ) = generate_resource_names(deployment_name)
 
     print(f"Creating Azure resource group {resource_group_name}")
@@ -69,12 +69,16 @@ def deploy_to_azure(bento_bundle_path, deployment_name, config_json):
             "create",
             "--name",
             function_plan_name,
+            "--resource-group",
+            resource_group_name,
             "--is-linux",
             "--sku",
-            azure_config["premium_plan_sku"],
+            azure_config["function_sku"],
             "--min-instances",
-            azure_config["min_instances"],
-            "--max-burst",
+            str(azure_config["min_instances"]),
+            # Only for EP plans
+            # "--max-burst",
+            # str(azure_config["max_burst"]),
         ]
     )
     print(f"Creating Azure ACR {acr_name}")
@@ -148,7 +152,7 @@ def deploy_to_azure(bento_bundle_path, deployment_name, config_json):
             docker_password,
         ]
     )
-    _set_cors_settings(function_name, resource_group_name)
+    set_cors_settings(function_name, resource_group_name)
 
 
 if __name__ == "__main__":

@@ -94,7 +94,7 @@ def get_docker_login_info(resource_group_name, container_registry_name):
             "true",
         ],
     )
-    docker_login_info = run_shell_command(
+    docker_login_info, err = run_shell_command(
         [
             "az",
             "acr",
@@ -107,6 +107,8 @@ def get_docker_login_info(resource_group_name, container_registry_name):
         ]
     )
 
+    if err.strip() != '':
+        print('Error: ', err)
     return docker_login_info["username"], docker_login_info["passwords"][0]["value"]
 
 

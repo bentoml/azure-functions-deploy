@@ -6,10 +6,10 @@ from azure import generate_resource_names
 
 
 def describe_azure(deployment_name):
-    (resource_group_name, _, _, _, function_name,) = generate_resource_names(
+    (resource_group_name, _, _, function_name, _) = generate_resource_names(
         deployment_name
     )
-    show_function_result = run_shell_command(
+    show_function_result, _ = run_shell_command(
         [
             "az",
             "functionapp",
@@ -36,6 +36,7 @@ def describe_azure(deployment_name):
         "type",
         "usageState",
     ]
+    print(show_function_result)
     info_json = {k: v for k, v in show_function_result.items() if k in keys}
     print(json.dumps(info_json, indent=2))
 
