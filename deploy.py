@@ -162,6 +162,6 @@ if __name__ == "__main__":
         )
     bento_bundle_path = sys.argv[1]
     deployment_name = sys.argv[2]
-    config_json = sys.argv[3] if sys.argv[3] else "ec2_config.json"
+    config_json = sys.argv[3] if sys.argv[3] else "azure_config.json"
 
     deploy_to_azure(bento_bundle_path, deployment_name, config_json)
