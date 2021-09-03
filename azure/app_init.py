@@ -3,7 +3,7 @@ import azure.functions as func  # pylint: disable=import-error, no-name-in-modul
 
 from bentoml.saved_bundle import load_from_dir
 from bentoml.types import HTTPRequest
-from flask import Flask, request
+from flask import Flask, request, Response
 
 bento_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 svc = load_from_dir(bento_path)
@@ -18,15 +18,24 @@ class BentoAzureServer:
         self._setup_routes()
 
     def _setup_routes(self):
+        # health check view function
+        def ping_view_func():
+            return Response(response="\n", status=200, mimetype="application/json")
+
+        self.app.add_url_rule(
+            "/ping", 'healthz', ping_view_func, methods=["GET"]
+        )
+
         for api in self.bento_service.inference_apis:
 
-            def view_function():
+            # pass request from Wsgi to Bentoml api service
+            def passthrough_function():
                 req = HTTPRequest.from_flask_request(request)
                 response = api.handle_request(req)
                 return response.to_flask_response()
 
             self.app.add_url_rule(
-                "/" + api.route, api.name, view_function, methods=["POST"]
+                "/" + api.route, api.name, passthrough_function, methods=["POST"]
             )
 
 
