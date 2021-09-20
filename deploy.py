@@ -3,7 +3,7 @@ import sys
 from bentoml.saved_bundle import load_bento_service_metadata
 from bentoml.configuration import LAST_PYPI_RELEASE_VERSION
 
-from azure import (
+from azurefunctions import (
     generate_azure_function_deployable,
     generate_resource_names,
     get_docker_login_info,
@@ -17,7 +17,7 @@ from utils import (
 )
 
 
-def deploy_to_azure(bento_bundle_path, deployment_name, config_json):
+def deploy(bento_bundle_path, deployment_name, config_json):
     bento_metadata = load_bento_service_metadata(bento_bundle_path)
 
     azure_config = get_configuration_value(config_json)
@@ -164,4 +164,4 @@ if __name__ == "__main__":
     deployment_name = sys.argv[2]
     config_json = sys.argv[3] if sys.argv[3] else "azure_config.json"
 
-    deploy_to_azure(bento_bundle_path, deployment_name, config_json)
+    deploy(bento_bundle_path, deployment_name, config_json)

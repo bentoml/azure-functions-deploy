@@ -2,14 +2,17 @@ import os
 import re
 import shutil
 
-from utils import run_shell_command
+from utils import run_shell_command, is_present
 
-from azure.azure_api_function_json_template import AZURE_API_FUNCTION_JSON
+from azurefunctions.azure_api_function_json_template import AZURE_API_FUNCTION_JSON
 
 
 def generate_azure_function_deployable(bento_bundle_path, project_path, azure_config):
-    current_dir_path = os.path.dirname(__file__)
+    # check if existing deployable is present
+    if is_present(project_path=project_path):
+        return project_path
 
+    current_dir_path = os.path.dirname(__file__)
     shutil.copytree(bento_bundle_path, project_path)
     shutil.copy(
         os.path.join(current_dir_path, "host.json"),
@@ -107,8 +110,8 @@ def get_docker_login_info(resource_group_name, container_registry_name):
         ]
     )
 
-    if err.strip() != '':
-        print('Error: ', err)
+    if err.strip() != "":
+        print("Error: ", err)
     return docker_login_info["username"], docker_login_info["passwords"][0]["value"]
 
 

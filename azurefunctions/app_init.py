@@ -1,4 +1,5 @@
 import os
+import logging
 import azure.functions as func  # pylint: disable=import-error, no-name-in-module
 
 from bentoml.saved_bundle import load_from_dir
@@ -43,4 +44,6 @@ bento_server = BentoAzureServer(svc)
 
 
 def main(req: func.HttpRequest, context: func.Context) -> func.HttpResponse:
+    logging.warning(req.headers.get('Content-Type'))
+    logging.warning(req.get_body())
     return func.WsgiMiddleware(bento_server.app.wsgi_app).handle(req, context)
