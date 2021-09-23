@@ -79,14 +79,6 @@ def update(bento_bundle_path, deployment_name, config_json):
 
 
 if __name__ == "__main__":
-    # if len(sys.argv) != 4:
-    #     raise Exception(
-    #         "Please provide bento_bundle_path deployment_name and configuration json"
-    #     )
-    # bento_bundle_path = sys.argv[1]
-    # deployment_name = sys.argv[2]
-    # config_json = sys.argv[3] if sys.argv[3] else "ec2_config.json"
-
     parser = argparse.ArgumentParser(
         prog='deploy',
         description="Update bentoml bundle on Azure Functions",
