@@ -38,7 +38,7 @@ def deploy(bento_bundle_path, deployment_name, config_json):
     ) = generate_resource_names(deployment_name)
 
     print(f"Creating Azure resource group {resource_group_name}")
-    show_function_result, _ = run_shell_command(
+    run_shell_command(
         [
             "az",
             "group",
@@ -51,7 +51,7 @@ def deploy(bento_bundle_path, deployment_name, config_json):
     )
 
     print(f"Creating Azure storage account {storage_account_name}")
-    show_function_result, _ = run_shell_command(
+    run_shell_command(
         [
             "az",
             "storage",
@@ -65,7 +65,7 @@ def deploy(bento_bundle_path, deployment_name, config_json):
     )
 
     print(f"Creating Azure function plan {function_plan_name}")
-    show_function_result, _ = run_shell_command(
+    run_shell_command(
         [
             "az",
             "functionapp",
@@ -87,7 +87,7 @@ def deploy(bento_bundle_path, deployment_name, config_json):
     )
 
     print(f"Creating Azure ACR {acr_name}")
-    show_function_result, _ = run_shell_command(
+    run_shell_command(
         [
             "az",
             "acr",
@@ -102,7 +102,7 @@ def deploy(bento_bundle_path, deployment_name, config_json):
     )
 
     # build and push docker
-    show_function_result, _ = run_shell_command(
+    run_shell_command(
         [
             "az",
             "acr",
@@ -135,7 +135,7 @@ def deploy(bento_bundle_path, deployment_name, config_json):
     docker_username, docker_password = get_docker_login_info(
         resource_group_name, acr_name
     )
-    show_function_result, _ = run_shell_command(
+    run_shell_command(
         [
             "az",
             "functionapp",
