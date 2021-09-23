@@ -2,6 +2,8 @@ import os
 import sys
 from bentoml.saved_bundle import load_bento_service_metadata
 from bentoml.configuration import LAST_PYPI_RELEASE_VERSION
+from rich.pretty import pprint
+import argparse
 
 from azurefunctions import (
     generate_azure_function_deployable,
@@ -36,7 +38,7 @@ def deploy(bento_bundle_path, deployment_name, config_json):
     ) = generate_resource_names(deployment_name)
 
     print(f"Creating Azure resource group {resource_group_name}")
-    run_shell_command(
+    show_function_result, _ = run_shell_command(
         [
             "az",
             "group",
@@ -47,8 +49,9 @@ def deploy(bento_bundle_path, deployment_name, config_json):
             azure_config["location"],
         ]
     )
+
     print(f"Creating Azure storage account {storage_account_name}")
-    run_shell_command(
+    show_function_result, _ = run_shell_command(
         [
             "az",
             "storage",
@@ -60,8 +63,9 @@ def deploy(bento_bundle_path, deployment_name, config_json):
             resource_group_name,
         ]
     )
+
     print(f"Creating Azure function plan {function_plan_name}")
-    run_shell_command(
+    show_function_result, _ = run_shell_command(
         [
             "az",
             "functionapp",
@@ -81,8 +85,9 @@ def deploy(bento_bundle_path, deployment_name, config_json):
             # str(azure_config["max_burst"]),
         ]
     )
+
     print(f"Creating Azure ACR {acr_name}")
-    run_shell_command(
+    show_function_result, _ = run_shell_command(
         [
             "az",
             "acr",
@@ -97,7 +102,7 @@ def deploy(bento_bundle_path, deployment_name, config_json):
     )
 
     # build and push docker
-    run_shell_command(
+    show_function_result, _ = run_shell_command(
         [
             "az",
             "acr",
@@ -108,6 +113,7 @@ def deploy(bento_bundle_path, deployment_name, config_json):
             resource_group_name,
         ]
     )
+
     docker_image_tag = (
         f"{acr_name}.azurecr.io/{bento_metadata.name}:{bento_metadata.version}".lower()
     )
@@ -129,7 +135,7 @@ def deploy(bento_bundle_path, deployment_name, config_json):
     docker_username, docker_password = get_docker_login_info(
         resource_group_name, acr_name
     )
-    run_shell_command(
+    show_function_result, _ = run_shell_command(
         [
             "az",
             "functionapp",
@@ -152,16 +158,26 @@ def deploy(bento_bundle_path, deployment_name, config_json):
             docker_password,
         ]
     )
+
     set_cors_settings(function_name, resource_group_name)
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4:
-        raise Exception(
-            "Please provide bento_bundle_path deployment_name and configuration json"
-        )
-    bento_bundle_path = sys.argv[1]
-    deployment_name = sys.argv[2]
-    config_json = sys.argv[3] if sys.argv[3] else "azure_config.json"
-
-    deploy(bento_bundle_path, deployment_name, config_json)
+    parser = argparse.ArgumentParser(
+        prog='deploy',
+        description="Deploy the bentoml bundle on Azure Functions",
+        epilog="Check out https://github.com/bentoml/azure-functions-deploy/blob/main/README.md to know more",
+    )
+    parser.add_argument("bento_bundle_path", help="Path to bentoml bundle")
+    parser.add_argument(
+        "deployment_name", help="The name you want to use for your deployment"
+    )
+    parser.add_argument(
+        "config_json",
+        help="(optional) The config file for your deployment",
+        default=os.path.join(os.getcwd(), "azure_config.json"),
+        nargs="?",
+    )
+    args = parser.parse_args()
+    deploy(args.bento_bundle_path, args.deployment_name, args.config_json)
+    pprint("Deployment complete!")

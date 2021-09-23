@@ -17,7 +17,9 @@ To try this out let us deploy the IrisClassifier demo from the [BentoML quick st
 
 1. Build and save Bento Bundle from BentoML quick start guide notebook mentioned above. 
 
-2. Create Azure Container Instance deployment with the deployment tool. Make sure that you copy the [config file](azure_config.json) and make the changes required for your deployment. The reference for the config file is given below.
+2. Update "location" in azure_config.json to appropriate resource group location. Eg: "eastus2" 
+
+3. Create Azure Container Instance deployment with the deployment tool. Make sure that you copy the [config file](azure_config.json) and make the changes required for your deployment. The reference for the config file is given below.
 
     Run deploy script in the command line:
 
@@ -57,10 +59,10 @@ To try this out let us deploy the IrisClassifier demo from the [BentoML quick st
     ...   
     ```
 
-3. Make sample request against deployed service
+4. Make sample request against deployed service
 
     ```bash
-    $ curl -i \                                                            <<<
+    $ curl -i \
       --header "Content-Type: application/json" \
       --request POST \
       --data '[[5.1, 3.5, 1.4, 0.2]]' \
@@ -78,10 +80,10 @@ To try this out let us deploy the IrisClassifier demo from the [BentoML quick st
     [0]%
     ```
 
-4. Delete function deployment
+5. Delete function deployment
 
     ```bash
-    python delete.py my-first-ec2-deployment
+    python delete.py iristest
     ```
 
 ## Deployment operations
@@ -138,8 +140,8 @@ $ python update.py <Bento_bundle_path> <Deployment_name> <Config_JSON>
 
 Use Python API
 ```python
-from update import update_azure
-update_azure(BENTO_BUNDLE_PATH, DEPLOYMENT_NAME, CONFIG_JSON)
+from update import update
+update(BENTO_BUNDLE_PATH, DEPLOYMENT_NAME, CONFIG_JSON)
 ```
 
 ### Get deployment's status and information
