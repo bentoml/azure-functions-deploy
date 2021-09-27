@@ -2,6 +2,14 @@ import sys
 import subprocess
 import json
 import docker
+import os
+import shutil
+
+from rich.console import Console
+
+
+# init rich console
+console = Console(highlight=False)
 
 
 def run_shell_command(command, cwd=None, env=None, shell_mode=False):
@@ -10,8 +18,6 @@ def run_shell_command(command, cwd=None, env=None, shell_mode=False):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         shell=shell_mode,
-        cwd=cwd,
-        env=env,
     )
     stdout, stderr = proc.communicate()
     default_encoding = sys.getfilesystemencoding()
@@ -35,46 +41,46 @@ def set_cors_settings(function_name, resource_group_name):
     # To allow all, use `*` and  remove all other origins in the list.
     cors_list_result, _ = run_shell_command(
         command=[
-            'az',
-            'functionapp',
-            'cors',
-            'show',
-            '--name',
+            "az",
+            "functionapp",
+            "cors",
+            "show",
+            "--name",
             function_name,
-            '--resource-group',
+            "--resource-group",
             resource_group_name,
         ],
     )
 
-    if cors_list_result != '':
-        for origin_url in cors_list_result['allowedOrigins']:
+    if cors_list_result != "":
+        for origin_url in cors_list_result["allowedOrigins"]:
             run_shell_command(
                 command=[
-                    'az',
-                    'functionapp',
-                    'cors',
-                    'remove',
-                    '--name',
+                    "az",
+                    "functionapp",
+                    "cors",
+                    "remove",
+                    "--name",
                     function_name,
-                    '--resource-group',
+                    "--resource-group",
                     resource_group_name,
-                    '--allowed-origins',
+                    "--allowed-origins",
                     origin_url,
                 ],
             )
 
         run_shell_command(
             command=[
-                'az',
-                'functionapp',
-                'cors',
-                'add',
-                '--name',
+                "az",
+                "functionapp",
+                "cors",
+                "add",
+                "--name",
                 function_name,
-                '--resource-group',
+                "--resource-group",
                 resource_group_name,
-                '--allowed-origins',
-                '*',
+                "--allowed-origins",
+                "*",
             ],
         )
 
@@ -111,3 +117,26 @@ def push_docker_image_to_repository(
         docker_client.images.push(**docker_push_kwags)
     except docker.errors.APIError as error:
         raise Exception(f"Failed to push docker image {image_tag}: {error}")
+
+
+def is_present(project_path):
+    """
+    Checks for existing deployable and if found offers users 2 options
+        1. overide the existing repo (usefull if there is only config changes)
+        2. use the existing one for this deployment
+
+    if no existing deployment is found, return false
+    """
+    if os.path.exists(project_path):
+        response = console.input(
+            f"Existing deployable found [[b]{os.path.relpath(project_path)}[/b]]!"
+            " Override? (y/n): "
+        )
+        if response.lower() in ["yes", "y", ""]:
+            print("overriding existing deployable!")
+            shutil.rmtree(project_path)
+            return False
+        elif response.lower() in ["no", "n"]:
+            print("Using existing deployable!")
+            return True
+    return False

@@ -13,7 +13,7 @@ from utils import (
     push_docker_image_to_repository,
 )
 
-from azure import generate_azure_function_deployable, generate_resource_names
+from azurefunctions import generate_azure_function_deployable, generate_resource_names
 
 
 def update(bento_bundle_path, deployment_name, config_json):
