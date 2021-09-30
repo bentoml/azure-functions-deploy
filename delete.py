@@ -3,17 +3,16 @@ import os
 import argparse
 from rich.pretty import pprint
 
-from utils import run_shell_command
+from utils import run_shell_command, console
 
 from azurefunctions import generate_resource_names
 
 
-
 def delete(deployment_name):
-    print(f"Deleting {deployment_name}"
-    resource_group_name, _, _, _, _ = generate_resource_names(deployment_name)
-    run_shell_command(["az", "group", "delete", "-y", "--name", resource_group_name])
-
+    with console.status(f"Deleting deployed app"):
+        resource_group_name, _, _, _, _ = generate_resource_names(deployment_name)
+        run_shell_command(["az", "group", "delete", "-y", "--name", resource_group_name])
+    console.print(f"Deleted {deployment_name}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

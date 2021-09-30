@@ -11,6 +11,7 @@ from utils import (
     run_shell_command,
     build_docker_image,
     push_docker_image_to_repository,
+    console
 )
 
 from azurefunctions import generate_azure_function_deployable, generate_resource_names
@@ -24,7 +25,7 @@ def update(bento_bundle_path, deployment_name, config_json):
         os.path.curdir,
         f"{bento_metadata.name}-{bento_metadata.version}-azure-deployable",
     )
-    print("Creating Azure function deployable")
+    console.print("Creating Azure function deployable")
     generate_azure_function_deployable(bento_bundle_path, deployable_path, azure_config)
     (
         resource_group_name,
@@ -48,35 +49,37 @@ def update(bento_bundle_path, deployment_name, config_json):
     docker_image_tag = (
         f"{acr_name}.azurecr.io/{bento_metadata.name}:{bento_metadata.version}".lower()
     )
-    print(f"Build and push image {docker_image_tag}")
-    major, minor, _ = bento_metadata.env.python_version.split(".")
-    build_docker_image(
-        context_path=deployable_path,
-        image_tag=docker_image_tag,
-        dockerfile="Dockerfile-azure",
-        additional_build_args={
-            "BENTOML_VERSION": LAST_PYPI_RELEASE_VERSION,
-            "PYTHON_VERSION": major + minor,
-        },
-    )
-    push_docker_image_to_repository(docker_image_tag)
-    print(f"Updating Azure function {function_name}")
-    run_shell_command(
-        [
-            "az",
-            "functionapp",
-            "config",
-            "container",
-            "set",
-            "--name",
-            function_name,
-            "--resource-group",
-            resource_group_name,
-            "--docker-custom-image-name",
-            docker_image_tag,
-        ]
-    )
+    with console.status("Building image"):
+        major, minor, _ = bento_metadata.env.python_version.split(".")
+        build_docker_image(
+            context_path=deployable_path,
+            image_tag=docker_image_tag,
+            dockerfile="Dockerfile-azure",
+            additional_build_args={
+                "BENTOML_VERSION": LAST_PYPI_RELEASE_VERSION,
+                "PYTHON_VERSION": major + minor,
+            },
+        )
+        push_docker_image_to_repository(docker_image_tag)
+    console.print(f"Built and pushed image {docker_image_tag}")
 
+    with console.status(f"Updating Azure function"):
+        run_shell_command(
+            [
+                "az",
+                "functionapp",
+                "config",
+                "container",
+                "set",
+                "--name",
+                function_name,
+                "--resource-group",
+                resource_group_name,
+                "--docker-custom-image-name",
+                docker_image_tag,
+            ]
+        )
+    console.print(f"Updating Azure function {function_name}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

@@ -16,6 +16,7 @@ from utils import (
     build_docker_image,
     push_docker_image_to_repository,
     set_cors_settings,
+    console
 )
 
 
@@ -27,7 +28,7 @@ def deploy(bento_bundle_path, deployment_name, config_json):
         os.path.curdir,
         f"{bento_metadata.name}-{bento_metadata.version}-azure-deployable",
     )
-    print("Creating Azure function deployable")
+    console.print("Creating Azure function deployable")
     generate_azure_function_deployable(bento_bundle_path, deployable_path, azure_config)
     (
         resource_group_name,
@@ -36,129 +37,137 @@ def deploy(bento_bundle_path, deployment_name, config_json):
         function_name,
         acr_name,
     ) = generate_resource_names(deployment_name)
+    console.print("Created Azure function deployable")
 
-    print(f"Creating Azure resource group {resource_group_name}")
-    run_shell_command(
-        [
-            "az",
-            "group",
-            "create",
-            "--name",
-            resource_group_name,
-            "--location",
-            azure_config["location"],
-        ]
-    )
+    with console.status("Creating Azure resource group"):
+        run_shell_command(
+            [
+                "az",
+                "group",
+                "create",
+                "--name",
+                resource_group_name,
+                "--location",
+                azure_config["location"],
+            ]
+        )
+    console.print(f"Created Azure resource group {resource_group_name}")
 
-    print(f"Creating Azure storage account {storage_account_name}")
-    run_shell_command(
-        [
-            "az",
-            "storage",
-            "account",
-            "create",
-            "--name",
-            storage_account_name,
-            "--resource-group",
-            resource_group_name,
-        ]
-    )
+    with console.status(f"Creating Azure storage account"):
+        run_shell_command(
+            [
+                "az",
+                "storage",
+                "account",
+                "create",
+                "--name",
+                storage_account_name,
+                "--resource-group",
+                resource_group_name,
+            ]
+        )
+    console.print(f"Created Azure storage account {storage_account_name}")
 
-    print(f"Creating Azure function plan {function_plan_name}")
-    run_shell_command(
-        [
-            "az",
-            "functionapp",
-            "plan",
-            "create",
-            "--name",
-            function_plan_name,
-            "--resource-group",
-            resource_group_name,
-            "--is-linux",
-            "--sku",
-            azure_config["function_sku"],
-            "--min-instances",
-            str(azure_config["min_instances"]),
-            # Only for EP plans
-            # "--max-burst",
-            # str(azure_config["max_burst"]),
-        ]
-    )
+    with console.status(f"Creating Azure function plan"):
+        run_shell_command(
+            [
+                "az",
+                "functionapp",
+                "plan",
+                "create",
+                "--name",
+                function_plan_name,
+                "--resource-group",
+                resource_group_name,
+                "--is-linux",
+                "--sku",
+                azure_config["function_sku"],
+                "--min-instances",
+                str(azure_config["min_instances"]),
+                # Only for EP plans
+                # "--max-burst",
+                # str(azure_config["max_burst"]),
+            ]
+        )
+    console.print(f"Created Azure function plan {function_plan_name}")
 
-    print(f"Creating Azure ACR {acr_name}")
-    run_shell_command(
-        [
-            "az",
-            "acr",
-            "create",
-            "--name",
-            acr_name,
-            "--sku",
-            azure_config["acr_sku"],
-            "--resource-group",
-            resource_group_name,
-        ]
-    )
+    with console.status(f"Creating Azure ACR"):
+        run_shell_command(
+            [
+                "az",
+                "acr",
+                "create",
+                "--name",
+                acr_name,
+                "--sku",
+                azure_config["acr_sku"],
+                "--resource-group",
+                resource_group_name,
+            ]
+        )
 
-    # build and push docker
-    run_shell_command(
-        [
-            "az",
-            "acr",
-            "login",
-            "--name",
-            acr_name,
-            "--resource-group",
-            resource_group_name,
-        ]
-    )
+        # build and push docker
+        run_shell_command(
+            [
+                "az",
+                "acr",
+                "login",
+                "--name",
+                acr_name,
+                "--resource-group",
+                resource_group_name,
+            ]
+        )
+    console.print(f"Created Azure ACR {acr_name}")
 
     docker_image_tag = (
         f"{acr_name}.azurecr.io/{bento_metadata.name}:{bento_metadata.version}".lower()
     )
-    print(f"Build and push image {docker_image_tag}")
+
 
     major, minor, _ = bento_metadata.env.python_version.split(".")
-    build_docker_image(
-        context_path=deployable_path,
-        image_tag=docker_image_tag,
-        dockerfile="Dockerfile-azure",
-        additional_build_args={
-            "BENTOML_VERSION": LAST_PYPI_RELEASE_VERSION,
-            "PYTHON_VERSION": major + minor,
-        },
-    )
-    push_docker_image_to_repository(docker_image_tag)
 
-    print(f"Deploying Azure function {function_name}")
-    docker_username, docker_password = get_docker_login_info(
-        resource_group_name, acr_name
-    )
-    run_shell_command(
-        [
-            "az",
-            "functionapp",
-            "create",
-            "--name",
-            function_name,
-            "--storage-account",
-            storage_account_name,
-            "--resource-group",
-            resource_group_name,
-            "--plan",
-            function_plan_name,
-            "--functions-version",
-            "3",
-            "--deployment-container-image-name",
-            docker_image_tag,
-            "--docker-registry-server-user",
-            docker_username,
-            "--docker-registry-server-password",
-            docker_password,
-        ]
-    )
+    with console.status("Building image"):
+        build_docker_image(
+            context_path=deployable_path,
+            image_tag=docker_image_tag,
+            dockerfile="Dockerfile-azure",
+            additional_build_args={
+                "BENTOML_VERSION": LAST_PYPI_RELEASE_VERSION,
+                "PYTHON_VERSION": major + minor,
+            },
+        )
+        push_docker_image_to_repository(docker_image_tag)
+    # console.print(f"Build and push image {docker_image_tag}")
 
+    with console.status("Deploying image in Azure functions"):
+        docker_username, docker_password = get_docker_login_info(
+            resource_group_name, acr_name
+        )
+        run_shell_command(
+            [
+                "az",
+                "functionapp",
+                "create",
+                "--name",
+                function_name,
+                "--storage-account",
+                storage_account_name,
+                "--resource-group",
+                resource_group_name,
+                "--plan",
+                function_plan_name,
+                "--functions-version",
+                "3",
+                "--deployment-container-image-name",
+                docker_image_tag,
+                "--docker-registry-server-user",
+                docker_username,
+                "--docker-registry-server-password",
+                docker_password,
+            ]
+        )
+    console.print(f"Deployed in Azure function {function_name}")
     set_cors_settings(function_name, resource_group_name)
 
 
