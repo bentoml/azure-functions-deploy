@@ -39,7 +39,7 @@ def deploy(bento_bundle_path, deployment_name, config_json):
     ) = generate_resource_names(deployment_name)
     console.print("Created Azure function deployable")
 
-    with console.status("Creating Azure resource group"):
+    with console.status("Creating resources in Azure"):
         run_shell_command(
             [
                 "az",
@@ -51,9 +51,8 @@ def deploy(bento_bundle_path, deployment_name, config_json):
                 azure_config["location"],
             ]
         )
-    console.print(f"Created Azure resource group {resource_group_name}")
+        console.print(f"Created Azure resource group {resource_group_name}")
 
-    with console.status(f"Creating Azure storage account"):
         run_shell_command(
             [
                 "az",
@@ -66,9 +65,9 @@ def deploy(bento_bundle_path, deployment_name, config_json):
                 resource_group_name,
             ]
         )
-    console.print(f"Created Azure storage account {storage_account_name}")
+        console.print(f"Created Azure storage account {storage_account_name}")
 
-    with console.status(f"Creating Azure function plan"):
+
         run_shell_command(
             [
                 "az",
@@ -89,9 +88,8 @@ def deploy(bento_bundle_path, deployment_name, config_json):
                 # str(azure_config["max_burst"]),
             ]
         )
-    console.print(f"Created Azure function plan {function_plan_name}")
+        console.print(f"Created Azure function plan {function_plan_name}")
 
-    with console.status(f"Creating Azure ACR"):
         run_shell_command(
             [
                 "az",
@@ -118,7 +116,7 @@ def deploy(bento_bundle_path, deployment_name, config_json):
                 resource_group_name,
             ]
         )
-    console.print(f"Created Azure ACR {acr_name}")
+        console.print(f"Created Azure ACR {acr_name}")
 
     docker_image_tag = (
         f"{acr_name}.azurecr.io/{bento_metadata.name}:{bento_metadata.version}".lower()
@@ -127,7 +125,7 @@ def deploy(bento_bundle_path, deployment_name, config_json):
 
     major, minor, _ = bento_metadata.env.python_version.split(".")
 
-    with console.status("Building image"):
+    with console.status("Pushing image"):
         build_docker_image(
             context_path=deployable_path,
             image_tag=docker_image_tag,
@@ -138,7 +136,7 @@ def deploy(bento_bundle_path, deployment_name, config_json):
             },
         )
         push_docker_image_to_repository(docker_image_tag)
-    # console.print(f"Build and push image {docker_image_tag}")
+    console.print(f"Pushed image {docker_image_tag}")
 
     with console.status("Deploying image in Azure functions"):
         docker_username, docker_password = get_docker_login_info(
