@@ -187,4 +187,4 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     deploy(args.bento_bundle_path, args.deployment_name, args.config_json)
-    pprint("Deployment complete!")
+    console.print("Deployment complete!")
