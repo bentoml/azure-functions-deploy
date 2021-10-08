@@ -1,12 +1,11 @@
-import json
-import sys
+import argparse
 
 from utils import run_shell_command
 from azurefunctions import generate_resource_names
 from rich.pretty import pprint
 
 
-def describe(deployment_name):
+def describe(deployment_name, azure_config=None):
     (resource_group_name, _, _, function_name, _) = generate_resource_names(
         deployment_name
     )
@@ -40,9 +39,14 @@ def describe(deployment_name):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        raise Exception("Please provide deployment_name")
-    deployment_name = sys.argv[1]
+    parser = argparse.ArgumentParser(
+        prog="describe",
+        description="Describe the Azure Function deployment you made.",
+        epilog="Check out https://github.com/bentoml/azure-functions-deploy/"
+        "blob/main/README.md to know more",
+    )
+    parser.add_argument("deployment_name", help="Name of the App to be deleted")
 
-    info_json = describe(deployment_name)
+    args = parser.parse_args()
+    info_json = describe(args.deployment_name)
     pprint(info_json)
