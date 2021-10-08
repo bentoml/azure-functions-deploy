@@ -1,7 +1,5 @@
 import os
-import sys
 import argparse
-from rich.pretty import pprint
 
 from bentoml.saved_bundle import load_bento_service_metadata
 from bentoml.configuration import LAST_PYPI_RELEASE_VERSION
@@ -11,7 +9,7 @@ from utils import (
     run_shell_command,
     build_docker_image,
     push_docker_image_to_repository,
-    console
+    console,
 )
 
 from azurefunctions import generate_azure_function_deployable, generate_resource_names
@@ -25,7 +23,6 @@ def update(bento_bundle_path, deployment_name, config_json):
         os.path.curdir,
         f"{bento_metadata.name}-{bento_metadata.version}-azure-deployable",
     )
-    console.print("Creating Azure function deployable")
     generate_azure_function_deployable(bento_bundle_path, deployable_path, azure_config)
     (
         resource_group_name,
@@ -49,7 +46,7 @@ def update(bento_bundle_path, deployment_name, config_json):
     docker_image_tag = (
         f"{acr_name}.azurecr.io/{bento_metadata.name}:{bento_metadata.version}".lower()
     )
-    with console.status("Building image"):
+    with console.status("Building and Pushing image"):
         major, minor, _ = bento_metadata.env.python_version.split(".")
         build_docker_image(
             context_path=deployable_path,
@@ -63,7 +60,7 @@ def update(bento_bundle_path, deployment_name, config_json):
         push_docker_image_to_repository(docker_image_tag)
     console.print(f"Built and pushed image {docker_image_tag}")
 
-    with console.status(f"Updating Azure function"):
+    with console.status("Updating Azure function"):
         run_shell_command(
             [
                 "az",
@@ -79,13 +76,15 @@ def update(bento_bundle_path, deployment_name, config_json):
                 docker_image_tag,
             ]
         )
-    console.print(f"Updating Azure function {function_name}")
+    console.print(f"Updated Azure function [b]{function_name}[/b]")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        prog='deploy',
+        prog="update",
         description="Update bentoml bundle on Azure Functions",
-        epilog="Check out https://github.com/bentoml/azure-functions-deploy/blob/main/README.md to know more",
+        epilog="Check out https://github.com/bentoml/azure-functions-deploy/"
+        "blob/main/README.md to know more",
     )
     parser.add_argument("bento_bundle_path", help="Path to bentoml bundle")
     parser.add_argument(
@@ -101,4 +100,4 @@ if __name__ == "__main__":
 
     update(args.bento_bundle_path, args.deployment_name, args.config_json)
 
-    pprint(f"{args.deployment_name} update complete!")
+    console.print(f"[bold green]{args.deployment_name} updation complete![/]")
