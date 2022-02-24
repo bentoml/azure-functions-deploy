@@ -2,7 +2,7 @@
 
 Azure functions is a great option if you want to deploy your model in a serverless manner and forget about autoscalling and want to keep costs to a minimum (per second billing and a free tier of 1 Million requests). Only drawbacks are that first request to your the endpoint will take more time but consecutive requests will be fast. This is due to the cold start issue and you can read the [official docs](https://azure.microsoft.com/en-in/blog/understanding-serverless-cold-start/) to learn more about it and possible fixes. 
 
-> Note: For the time being this repos only works for `BentoML <= 0.13`. 
+> Note: For the time being this repos only supports `BentoML <= 0.13`. 
 > The Repo is in the process of being migrated to the new BentoML 1.0 release. You can track the progress
 > here [#88](https://github.com/bentoml/bentoctl/issues/88). 
 
