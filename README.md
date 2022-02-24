@@ -127,6 +127,8 @@ You can have a config file to specify the specifics for your deployment. There i
 }
 ```
 
+* `resrouce_group`: Resource group into which the resources have to be created.
+* `acr_name`: The name of Azure Container Registry to use to store images.
 * `location`: Azure function location for deployment.
 * `min_instances`: The number of workers for the app.
 * `max_burst`: The maximum number of elastic workers for the app
