@@ -1,10 +1,10 @@
 import argparse
 
-from utils import run_shell_command, console
-from azurefunctions import generate_resource_names
+from .utils import run_shell_command, console
+from .azurefunctions import generate_resource_names
 
 
-def delete(deployment_name, azure_config=None):
+def delete(deployment_name, deployment_spec=None):
     with console.status("Deleting deployed app"):
         resource_group_name, _, _, _, _ = generate_resource_names(deployment_name)
         run_shell_command(

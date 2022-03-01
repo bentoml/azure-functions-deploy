@@ -1,6 +1,6 @@
 OPERATOR_NAME = "azure-functions"
 
-OPERATOR_MODULE_DIR = "bentoctl_azfunctions"
+OPERATOR_MODULE= "bentoctl_azfunctions"
 
 # BentoML deployment tool use Cerberus to validate the input.
 OPERATOR_SCHEMA = {
@@ -17,6 +17,7 @@ OPERATOR_SCHEMA = {
     "location": {
         "type": "string",
         "required": True,
+        "default": None,
         "help_message": "Azure region or location that you want to deploy to. By default it will use the same one as your resource group",
     },
     "min_instances": {
