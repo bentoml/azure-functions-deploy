@@ -4,7 +4,7 @@ import argparse
 import json
 import os
 
-import my_operator as myop
+import bentoctl_azfunctions as myop
 
 parser = argparse.ArgumentParser()
 parser.add_argument("bento_bundle_path", help="Path to Bento bundle")
