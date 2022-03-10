@@ -2,43 +2,53 @@ import os
 import re
 import shutil
 
-from utils import run_shell_command, is_present
-
-from azurefunctions.azure_api_function_json_template import AZURE_API_FUNCTION_JSON
+from ..utils import run_shell_command, get_metadata
 
 
-def generate_azure_function_deployable(bento_bundle_path, project_path, azure_config):
-    # check if existing deployable is present
-    if is_present(project_path=project_path):
-        return project_path
-
+def generate_azure_function_deployable(
+    bento_path, deployable_path, function_auth_level
+):
     current_dir_path = os.path.dirname(__file__)
-    shutil.copytree(bento_bundle_path, project_path)
+    bento_metadata = get_metadata(bento_path)
+
+    # copy the host.json
+    shutil.copytree(bento_path, deployable_path)
     shutil.copy(
         os.path.join(current_dir_path, "host.json"),
-        os.path.join(project_path, "host.json"),
-    )
-    shutil.copy(
-        os.path.join(current_dir_path, "local.settings.json"),
-        os.path.join(project_path, "local.settings.json"),
-    )
-    shutil.copy(
-        os.path.join(current_dir_path, "Dockerfile"),
-        os.path.join(project_path, "Dockerfile-azure"),
+        os.path.join(deployable_path, "host.json"),
     )
 
-    app_path = os.path.join(project_path, "app")
+    # copy local.settings.json
+    shutil.copy(
+        os.path.join(current_dir_path, "local.settings.json"),
+        os.path.join(deployable_path, "local.settings.json"),
+    )
+
+    # Make docker file with dockerfile template
+    template_file = os.path.join(current_dir_path, "Dockerfile")
+    dockerfile = os.path.join(deployable_path, "Dockerfile")
+    with open(template_file, "r", encoding="utf-8") as f:
+        dockerfile_template = f.read()
+    with open(dockerfile, "w") as dockerfile:
+        dockerfile.write(
+            dockerfile_template.format(
+                bentoml_version=bento_metadata["bentoml_version"],
+                python_version=bento_metadata["python_version"],
+            )
+        )
+
+    app_path = os.path.join(deployable_path, "app")
     os.mkdir(app_path)
     shutil.copy(
         os.path.join(current_dir_path, "app_init.py"),
         os.path.join(app_path, "__init__.py"),
     )
-    with open(os.path.join(app_path, "function.json"), "w") as f:
-        f.write(
-            AZURE_API_FUNCTION_JSON.format(
-                function_auth_level=azure_config["function_auth_level"]
-            )
-        )
+
+    # copy the function.json file that specifies config for the function
+    shutil.copy(
+        os.path.join(current_dir_path, "function.json"),
+        os.path.join(app_path, "function.json"),
+    )
 
 
 def set_cors_settings(function_name, resource_group_name):
@@ -95,6 +105,8 @@ def get_docker_login_info(resource_group_name, container_registry_name):
             container_registry_name,
             "--admin-enabled",
             "true",
+            "--resource-group",
+            resource_group_name
         ],
     )
     docker_login_info, err = run_shell_command(

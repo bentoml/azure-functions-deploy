@@ -1,10 +1,6 @@
 import os
-import argparse
 
-from bentoml.saved_bundle import load_bento_service_metadata
-from bentoml.configuration import LAST_PYPI_RELEASE_VERSION
-
-from utils import (
+from .utils import (
     get_configuration_value,
     run_shell_command,
     build_docker_image,
@@ -12,7 +8,7 @@ from utils import (
     console,
 )
 
-from azurefunctions import generate_azure_function_deployable, generate_resource_names
+from .azurefunctions import generate_azure_function_deployable, generate_resource_names
 
 
 def update(bento_bundle_path, deployment_name, config_json):
@@ -77,27 +73,3 @@ def update(bento_bundle_path, deployment_name, config_json):
             ]
         )
     console.print(f"Updated Azure function [b]{function_name}[/b]")
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        prog="update",
-        description="Update bentoml bundle on Azure Functions",
-        epilog="Check out https://github.com/bentoml/azure-functions-deploy/"
-        "blob/main/README.md to know more",
-    )
-    parser.add_argument("bento_bundle_path", help="Path to bentoml bundle")
-    parser.add_argument(
-        "deployment_name", help="The name you want to use for your deployment"
-    )
-    parser.add_argument(
-        "config_json",
-        help="(optional) The config file for your deployment",
-        default=os.path.join(os.getcwd(), "azure_config.json"),
-        nargs="?",
-    )
-    args = parser.parse_args()
-
-    update(args.bento_bundle_path, args.deployment_name, args.config_json)
-
-    console.print(f"[bold green]{args.deployment_name} updation complete![/]")

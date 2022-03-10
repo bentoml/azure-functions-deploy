@@ -1,16 +1,12 @@
 import os
-import argparse
 
-from bentoml.saved_bundle import load_bento_service_metadata
-from bentoml.configuration import LAST_PYPI_RELEASE_VERSION
-
-from azurefunctions import (
+from .azurefunctions import (
     generate_azure_function_deployable,
     generate_resource_names,
     get_docker_login_info,
 )
-from utils import (
-    get_configuration_value,
+from .utils import (
+    get_metadata,
     run_shell_command,
     build_docker_image,
     push_docker_image_to_repository,
@@ -19,15 +15,15 @@ from utils import (
 )
 
 
-def deploy(bento_bundle_path, deployment_name, config_json):
-    bento_metadata = load_bento_service_metadata(bento_bundle_path)
+def deploy(bento_path, deployment_name, deployment_spec):
+    bento_metadata = get_metadata(bento_path)
+    bento_tag = bento_metadata['tag']
 
-    azure_config = get_configuration_value(config_json)
     deployable_path = os.path.join(
         os.path.curdir,
-        f"{bento_metadata.name}-{bento_metadata.version}-azure-deployable",
+        f"{bento_tag.name}-{bento_tag.version}-azure-deployable",
     )
-    generate_azure_function_deployable(bento_bundle_path, deployable_path, azure_config)
+    generate_azure_function_deployable(bento_path, deployable_path, deployment_spec)
     (
         resource_group_name,
         storage_account_name,
@@ -46,7 +42,7 @@ def deploy(bento_bundle_path, deployment_name, config_json):
                 "--name",
                 resource_group_name,
                 "--location",
-                azure_config["location"],
+                deployment_spec["location"],
             ]
         )
         console.print(f"Created Azure resource group [b]{resource_group_name}[/b]")
@@ -77,9 +73,9 @@ def deploy(bento_bundle_path, deployment_name, config_json):
                 resource_group_name,
                 "--is-linux",
                 "--sku",
-                azure_config["function_sku"],
+                "B1",
                 "--min-instances",
-                str(azure_config["min_instances"]),
+                str(deployment_spec["min_instances"]),
                 # Only for EP plans
                 # "--max-burst",
                 # str(azure_config["max_burst"]),
@@ -95,7 +91,7 @@ def deploy(bento_bundle_path, deployment_name, config_json):
                 "--name",
                 acr_name,
                 "--sku",
-                azure_config["acr_sku"],
+                "Basic",
                 "--resource-group",
                 resource_group_name,
             ]
@@ -116,20 +112,13 @@ def deploy(bento_bundle_path, deployment_name, config_json):
         console.print(f"Created Azure ACR [b]{acr_name}[/b]")
 
     docker_image_tag = (
-        f"{acr_name}.azurecr.io/{bento_metadata.name}:{bento_metadata.version}".lower()
+        f"{acr_name}.azurecr.io/{bento_tag.name}:{bento_tag.version}".lower()
     )
-
-    major, minor, _ = bento_metadata.env.python_version.split(".")
 
     with console.status("Pushing image"):
         build_docker_image(
             context_path=deployable_path,
             image_tag=docker_image_tag,
-            dockerfile="Dockerfile-azure",
-            additional_build_args={
-                "BENTOML_VERSION": LAST_PYPI_RELEASE_VERSION,
-                "PYTHON_VERSION": major + minor,
-            },
         )
         push_docker_image_to_repository(docker_image_tag)
     console.print(f"Pushed image {docker_image_tag}")
@@ -163,24 +152,3 @@ def deploy(bento_bundle_path, deployment_name, config_json):
         )
     console.print(f"Deployed in Azure function [b]{function_name}[/b]")
     set_cors_settings(function_name, resource_group_name)
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        prog="deploy",
-        description="Deploy the bentoml bundle on Azure Functions",
-        epilog="Check out https://github.com/bentoml/azure-functions-deploy/blob/main/README.md to know more",
-    )
-    parser.add_argument("bento_bundle_path", help="Path to bentoml bundle")
-    parser.add_argument(
-        "deployment_name", help="The name you want to use for your deployment"
-    )
-    parser.add_argument(
-        "config_json",
-        help="(optional) The config file for your deployment",
-        default=os.path.join(os.getcwd(), "azure_config.json"),
-        nargs="?",
-    )
-    args = parser.parse_args()
-    deploy(args.bento_bundle_path, args.deployment_name, args.config_json)
-    console.print("[bold green]Deployment complete![/]")
