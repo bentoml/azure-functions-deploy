@@ -30,7 +30,8 @@ OPERATOR_SCHEMA = {
     },
     "premium_plan_sku": {
         "type": "string",
-        "default": "P1v1",
+        "default": "P1v2",
+        "required": True,
         "help_message": "The SKU of the app service plan. Allowed values: P1v2, P2v2, P3v2",
         "allowed": ["P1v2", "P2v2", "P3v2"],
     },
