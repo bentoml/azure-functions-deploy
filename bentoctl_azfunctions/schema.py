@@ -13,7 +13,7 @@ OPERATOR_SCHEMA = {
     "location": {
         "type": "string",
         "required": True,
-        "default": None,
+        "default": "East US",
         "help_message": "Azure region or location that you want to deploy to. By default it will use the same one as your resource group",
     },
     "min_instances": {
@@ -28,16 +28,10 @@ OPERATOR_SCHEMA = {
         "coerce": int,
         "help_message": "The maximum number of elastic workers for the app",
     },
-    "premiume_plan_sku": {
+    "premium_plan_sku": {
         "type": "string",
-        "default": "EP1",
-        "help_message": "The SKU of the app service plan. Allowed values: EP1, EP2, EP3.",
-        "allowed": ["EP1", "EP2", "EP3"],
-    },
-    "function_auth_level": {
-        "type": "string",
-        "default": "anonymous",
-        "help_message": "The authentication level for the function. Allowed values: anonymous, function, admin.",
-        "allowed": ["anonymous", "function", "admin"],
+        "default": "P1v1",
+        "help_message": "The SKU of the app service plan. Allowed values: P1v2, P2v2, P3v2",
+        "allowed": ["P1v2", "P2v2", "P3v2"],
     },
 }
