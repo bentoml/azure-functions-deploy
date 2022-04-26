@@ -9,6 +9,10 @@ ARG BENTO_PATH=/home/site/wwwroot
 ENV BENTO_PATH=$BENTO_PATH
 WORKDIR $BENTO_PATH
 
+# install bentoml
+RUN python -m pip install bentoml=={bentoml_version} --pre
+
+
 # copy over env directory
 COPY ./env ./env
 RUN chmod +x ./env/docker/init.sh
