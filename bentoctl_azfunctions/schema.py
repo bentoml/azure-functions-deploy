@@ -10,12 +10,6 @@ OPERATOR_SCHEMA = {
         "required": True,
         "help_message": "The name of Azure Container Registry to use to store images.",
     },
-    "location": {
-        "type": "string",
-        "required": True,
-        "default": "East US",
-        "help_message": "Azure region or location that you want to deploy to. By default it will use the same one as your resource group",
-    },
     "min_instances": {
         "type": "integer",
         "default": 1,
