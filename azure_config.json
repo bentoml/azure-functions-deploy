@@ -1,8 +1,0 @@
-{
-  "location": "< replace with resource location that is setup in azure>",
-  "min_instances": 1,
-  "max_burst": 20,
-  "function_sku": "B1",
-  "function_auth_level": "anonymous",
-  "acr_sku": "Standard"
-}

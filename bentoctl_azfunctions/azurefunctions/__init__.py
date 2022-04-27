@@ -106,7 +106,7 @@ def get_docker_login_info(resource_group_name, container_registry_name):
             "--admin-enabled",
             "true",
             "--resource-group",
-            resource_group_name
+            resource_group_name,
         ],
     )
     docker_login_info, err = run_shell_command(
