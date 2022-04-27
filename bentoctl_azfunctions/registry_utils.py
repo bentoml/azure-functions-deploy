@@ -87,7 +87,6 @@ def delete_repository(deployment_name, operator_spec):
     """
     Delete the repository crated in Azure Container Registry
     """
-    breakpoint()
     run_shell_command(
         [
             "az",
