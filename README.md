@@ -1,178 +1,122 @@
 # BentoML Azure Functions deployment tool
 
-Azure functions is a great option if you want to deploy your model in a serverless manner and forget about autoscalling and want to keep costs to a minimum (per second billing and a free tier of 1 Million requests). Only drawbacks are that first request to your the endpoint will take more time but consecutive requests will be fast. This is due to the cold start issue and you can read the [official docs](https://azure.microsoft.com/en-in/blog/understanding-serverless-cold-start/) to learn more about it and possible fixes. 
+Azure Functions are a great option if you want to deploy your model in a serverless manner and forget about autoscaling and want to keep costs to a minimum (per-second billing and a free tier of 1 Million requests). The only drawbacks are that the first request to your endpoint will take more time but consecutive requests will be fast. This is due to the cold start issue and you can read the [official docs](https://azure.microsoft.com/en-in/blog/understanding-serverless-cold-start/) to learn more about it and possible fixes. 
 
-> Note: For the time being this repos only supports `BentoML <= 0.13`. 
-> The Repo is in the process of being migrated to the new BentoML 1.0 release. You can track the progress
-> here [#88](https://github.com/bentoml/bentoctl/issues/88). 
+Using [BentoML](https://github.com/bentoml/BentoML) and [bentoctl](https://github.com/bentoml/bentoctl), you can enjoy the flexibility of Azure Functions with your favourite ML frameworks and easily manage your infrastructure via terraform.
 
-## Prerequisites
+> **Note:** This operator is compatible with BentoML version 1.0.0 and above. For older versions, please switch to the branch `pre-v1.0` and follow the instructions in the README.md. 
 
-- An active Azure account configured on the machine with Azure CLI installed and configured
-    - Install instruction: https://docs.microsoft.com/en-us/cli/azure/install-azure-cli (Version >= 2.6.0)
-    - Configure Azure account instruction: https://docs.microsoft.com/en-us/cli/azure/authenticate-azure-cli
-- Docker is installed and running on the machine.
-    - Install instruction: https://docs.docker.com/install
-- Install required python packages
-    - `$ pip install -r requirements.txt`
+## Table of Contents
+
+   * [Quickstart](#quickstart)
+   * [Configuration Options](#configuration-options)
 
 ## Quickstart
-To try this out let us deploy the IrisClassifier demo from the [BentoML quick start guide](https://github.com/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb).
 
-1. Build and save Bento Bundle from BentoML quick start guide notebook mentioned above. 
+This quickstart will walk you through deploying a bento into Azure Function. Make sure to go through the [prerequisites](#prerequisites) section and follow the instructions to set everything up.
 
-2. Update "location" in azure_config.json to appropriate resource group location. Eg: "eastus2" 
+### Prerequisites
 
-3. Create Azure Container Instance deployment with the deployment tool. Make sure that you copy the [config file](azure_config.json) and make the changes required for your deployment. The reference for the config file is given below.
+1. Azure CLI - An active Azure account configured on the machine with Azure CLI installed and configured
+    - Install instruction: https://docs.microsoft.com/en-us/cli/azure/install-azure-cli (Version >= 2.6.0)
+    - Configure Azure account instruction: https://docs.microsoft.com/en-us/cli/azure/authenticate-azure-cli
+2. Terraform - Terraform is a tool for building, configuring, and managing infrastructure. Installation instruction: www.terraform.io/downloads
+3. Docker - Install instruction: https://docs.docker.com/install
+4. A working bento - for this guide, we will use the iris-classifier bento from the BentoML [quickstart guide](https://docs.bentoml.org/en/latest/quickstart.html#quickstart).
 
-    Run deploy script in the command line:
+### Steps
+1. Install bentoctl via pip
+    ```bash
+    pip install --pre bentoctl
+    ```
+
+2. Install the operator
+
+    Bentoctl will install the official Azure Function operator and its dependencies. The Operator contains the Terraform templates and sets up the registries reqired to deploy to Azure.
 
     ```bash
-    $ BENTO_BUNDLE_PATH=$(bentoml get IrisClassifier:latest --print-location -q)
-    $ python deploy.py $BENTO_BUNDLE_PATH iristest azure_config.json
+    bentoctl operator install azure-functions
+    ```
+
+3. Initialize deployment with bentoctl
+
+    Follow the interactive guide to initialize the deployment project.
+
+    ```bash
+    $ bentoctl init
     
-    # Sample output
-    Creating Azure function deployable
-    Creating Azure resource group iristest-resource
-    Creating Azure storage account iristest0sa
-    Creating Azure function plan iristest
-    Creating Azure ACR iristest0acr
-    Build and push image iristest0acr.azurecr.io/irisclassifier:20210803234622_65f4f4
-    Deploying Azure function iristest-fn
+    Bentoctl Interactive Deployment Config Builder
+
+    Welcome! You are now in interactive mode.
+
+    This mode will help you set up the deployment_config.yaml file required for
+    deployment. Fill out the appropriate values for the fields.
+
+    (deployment config will be saved to: ./deployment_config.yaml)
+
+    api_version: v1
+    name: quickstart
+    operator: azure-functions
+    template: terraform
+    spec:
+        resource_group: quickstart
+        acr_name: quickstartjj
+        min_instances: 1
+        max_burst: 2
+        premium_plan_sku: P1v2
+        
+    filename for deployment_config [deployment_config.yaml]:
+    deployment config generated to: deployment_config.yaml
+    ✨ generated template files.
+      - ./main.tf
+      - ./bentoctl.tfvars
     ```
+    This will also run the `bentoctl generate` command for you and will generate the `main.tf` terraform file, which specifies the resources to be created and the `bentoctl.tfvars` file which contains the values for the variables used in the `main.tf` file.
 
-
-
-    Get Azure Function deployment information and status
+4. Build and push docker image into Google Container Registry.
 
     ```bash
-    $ python describe.py iristest
-
-    # Sample output
-    ...
-        {
-      "defaultHostName": "iristest1-fn.azurewebsites.net",
-      "enabledHostNames": [
-        "iristest1-fn.azurewebsites.net",
-        "iristest1-fn.scm.azurewebsites.net"
-      ],
-      "hostNames": [
-        "iristest1-fn.azurewebsites.net"
-      ],
-      "id": "/subscriptions/6537c276-c5b1-45c2-b3ab-84a22b0cb437/resourceGroups/iristest1-resource/providers/Microsoft.Web/sites/iristest1-fn",
-    ...   
+    bentoctl build -b iris_classifier:latest -f deployment_config.yaml
     ```
+    The iris-classifier service is now built and pushed into the container registry and the required terraform files have been created. Now we can use terraform to perform the deployment.
+    
+5. Apply Deployment with Terraform
 
-4. Make sample request against deployed service
+   1. Initialize terraform project. This installs the Azure provider and sets up the terraform folders.
+        ```bash
+        terraform init
+        ```
+
+   2. Apply terraform project to create Azure Function deployment
+
+        ```bash
+        terraform apply -var-file=bentoctl.tfvars -auto-approve
+        ```
+
+6. Test deployed endpoint
+
+    The `iris_classifier` uses the `/classify` endpoint for receiving requests so the full URL for the classifier will be in the form `{EndpointUrl}/classify`.
 
     ```bash
-    $ curl -i \
+    URL=$(terraform output -json | jq -r .url.value)/classify
+    curl -i \
       --header "Content-Type: application/json" \
       --request POST \
-      --data '[[5.1, 3.5, 1.4, 0.2]]' \
-        iristest1-fn.azurewebsites.net/predict
-        
-    # Sample output
-    HTTP/1.1 200 OK
-    Content-Length: 3
-    Content-Type: application/json
-    Server: Kestrel
-    Request-Context: appId=cid-v1:a3706f16-a040-4251-a5fa-de9f2abacbea
-    x-request-id: d2bebb94-27e3-489e-aa7d-df4ab1c34130
-    Date: Wed, 04 Aug 2021 19:22:41 GMT
-
-    [0]%
+      --data '[5.1, 3.5, 1.4, 0.2]' \
+      $URL
     ```
 
-5. Delete function deployment
+7. Delete deployment
+    Use the `bentoctl destroy` command to remove the registry and the deployment
 
     ```bash
-    python delete.py iristest
+    bentoctl destroy -f deployment_config.yaml
     ```
 
-## Deployment operations
-
-### Create a deployment
-
-Use command line
-```bash
-$ python deploy.py <Bento_bundle_path> <Deployment_name> <Config_JSON default is azure_config.json>
-```
-
-Example:
-```bash
-$ MY_BUNDLE_PATH=${bentoml get IrisClassifier:latest --print-location -q)
-$ python deploy.py $MY_BUNDLE_PATH my_first_deployment azure_config.json
-```
-
-Use Python API
-```python
-from deploy import deploy_to_azure
-
-deploy_to_azure(BENTO_BUNDLE_PATH, DEPLOYMENT_NAME, CONFIG_JSON)
-```
-
-
-#### Available configuration options for Azure Function deployments
-
-You can have a config file to specify the specifics for your deployment. There is a sample config provide [here](azure_config.json)
-```
-{
-  "location": "location",
-  "min_instances": 1,
-  "max_burst": 20,
-  "premium_plan_sku": "EP1",
-  "function_auth_level": "anonymous",
-  "acr_sku": "Standard"
-}
-```
+## Configuration Options
 
 * `resrouce_group`: Resource group into which the resources have to be created.
 * `acr_name`: The name of Azure Container Registry to use to store images.
-* `location`: Azure function location for deployment.
 * `min_instances`: The number of workers for the app.
 * `max_burst`: The maximum number of elastic workers for the app
-* `premium_plan_sku`: The SKU of the app service plan. Allowed values: EP1, EP2, EP3. See the link for more info: https://docs.microsoft.com/en-us/azure/azure-functions/functions-premium-plan
-* `function_auth_level`: The authentication level for the function. Allowed values: anonymous, function, admin. See link for more info: # https://docs.microsoft.com/en-us/java/api/com.microsoft.azure.functions.annotation.httptrigger.authlevel?view=azure-java-stable
-* `acr_sku`: The SKU of the container registry.  Allowed values: Basic, Classic, Premium, Standard. Default is `Standard`
-
-
-### Update a deployment
-
-Use command line
-```bash
-$ python update.py <Bento_bundle_path> <Deployment_name> <Config_JSON>
-```
-
-Use Python API
-```python
-from update import update
-update(BENTO_BUNDLE_PATH, DEPLOYMENT_NAME, CONFIG_JSON)
-```
-
-### Get deployment's status and information
-
-Use command line
-```bash
-$ python describe.py <Deployment_name> <Config_JSON>
-```
-
-
-Use Python API
-```python
-from describe import describe_azure
-describe_azure(DEPLOYMENT_NAME)
-```
-
-### Delete deployment
-
-Use command line
-```bash
-$ python delete.py <Deployment_name> <Config_JSON>
-```
-
-Use Python API
-```python
-from  delete import delete_azure
-delete_azure(DEPLOYMENT_NAME)
-```
+* `premium_plan_sku`: The SKU of the app service plan. Allowed values: P1v2, P2v2, P3v2. See the link for more info: https://docs.microsoft.com/en-us/azure/azure-functions/functions-premium-plan
