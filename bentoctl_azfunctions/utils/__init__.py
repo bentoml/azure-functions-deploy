@@ -1,14 +1,13 @@
-import sys
-import subprocess
 import json
-import docker
 import os
 import shutil
+import subprocess
+import sys
 
+import docker
 import fs
 from bentoml.bentos import Bento
 from rich.console import Console
-
 
 # init rich console
 console = Console(highlight=False)
