@@ -3,12 +3,19 @@ from __future__ import annotations
 import os
 import shutil
 from pathlib import Path
+from sys import version_info
 from typing import Any
+
+from attr import asdict
+
+if version_info >= (3, 8):
+    from shutil import copytree
+else:
+    from backports.shutil_copytree import copytree
 
 from bentoml._internal.bento.bento import BentoInfo
 from bentoml._internal.bento.build_config import DockerOptions
 from bentoml._internal.bento.gen import generate_dockerfile
-from bentoml._internal.utils import bentoml_cattr
 
 root_dir = Path(os.path.abspath(os.path.dirname(__file__)), "azurefunctions")
 
@@ -65,7 +72,7 @@ def create_deployable(
     deployable_path = Path(destination_dir)
 
     # copy over the bento bundle
-    shutil.copytree(bento_path, deployable_path, dirs_exist_ok=True)
+    copytree(bento_path, deployable_path, dirs_exist_ok=True)
     # Dockerfile
     bento_metafile = Path(bento_path, "bento.yaml")
     with bento_metafile.open("r", encoding="utf-8") as metafile:
