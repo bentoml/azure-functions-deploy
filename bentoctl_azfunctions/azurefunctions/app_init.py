@@ -2,10 +2,9 @@ import logging
 import os
 import sys
 
+import azure.functions as func
 from bentoml import load
 from bentoml._internal.configuration.containers import DeploymentContainer
-import azure.functions as func
-
 
 bento_service = load("./")
 logging.info("Loaded bento_service: %s", bento_service)

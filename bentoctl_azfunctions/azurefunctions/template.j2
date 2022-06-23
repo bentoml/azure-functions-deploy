@@ -1,0 +1,9 @@
+# To enable ssh & remote debugging on app service
+# uncomment the two lines below
+# {% set __base_image__ = mcr.microsoft.com/azure-functions/python:3.0-python3.8-appservice %}
+# {% set __supported_architectures__ = ['amd64'] %}
+{% extends bento_base_template %}
+{% block SETUP_BENTO_USER %}
+{% set bento__path = "/home/site/wwwroot" %}
+{{ super() }}
+{% endblock %}

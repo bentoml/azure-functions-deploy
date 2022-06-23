@@ -2,7 +2,7 @@ import os
 import re
 import shutil
 
-from ..utils import run_shell_command, get_metadata
+from ..utils import get_metadata, run_shell_command
 
 
 def generate_azure_function_deployable(
