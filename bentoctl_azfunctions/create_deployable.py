@@ -1,48 +1,52 @@
+from __future__ import annotations
+
 import os
 import shutil
+from pathlib import Path
+from sys import version_info
+from typing import Any
 
-root_dir = os.path.join(os.path.dirname(__file__), "azurefunctions")
-HOST_JSON_FILE = os.path.join(root_dir, "host.json")
-LOCAL_SETTINGS_FILE = os.path.join(root_dir, "local.settings.json")
-DOCKERFILE_TEMPLATE = os.path.join(root_dir, "Dockerfile")
-APP_INIT_FILE = os.path.join(root_dir, "app_init.py")
-FUNCTION_JSON_FILE = os.path.join(root_dir, "function.json")
+from attr import asdict
+
+if version_info >= (3, 8):
+    from shutil import copytree
+else:
+    from backports.shutil_copytree import copytree
+
+from bentoml._internal.bento.bento import BentoInfo
+from bentoml._internal.bento.build_config import DockerOptions
+from bentoml._internal.bento.gen import generate_dockerfile
+from bentoml._internal.utils.cattr import bentoml_cattr
+
+root_dir = Path(os.path.abspath(os.path.dirname(__file__)), "azurefunctions")
+
+HOST_JSON_PATH = os.path.join(root_dir, "host.json")
+LOCAL_SETTINGS_PATH = os.path.join(root_dir, "local.settings.json")
+TEMPLATE_PATH = os.path.join(root_dir, "template.j2")
+APP_INIT_PATH = os.path.join(root_dir, "app_init.py")
+FUNCTION_JSON_PATH = os.path.join(root_dir, "function.json")
 
 
-def generate_dockerfile_in(deployable_path, bento_metadata):
-    dockerfile_path = os.path.join(deployable_path, "Dockerfile")
-    with open(DOCKERFILE_TEMPLATE, "r") as template_file, open(
-        dockerfile_path, "w"
-    ) as dockerfile:
-        template = template_file.read()
-        dockerfile.write(
-            template.format(
-                bentoml_version=bento_metadata["bentoml_version"],
-                python_version=bento_metadata["python_version"],
-            )
-        )
+# NOTE: map to bentoml supported python version: 3.7 -> 3.10
+AZURE_FUNCTIONS_DOCKER_PYTHON_VERSION_MAPPING = {
+    "3.7": "mcr.microsoft.com/azure-functions/python:3.0-python3.7",
+    "3.8": "mcr.microsoft.com/azure-functions/python:4-python3.8",
+    "3.9": "mcr.microsoft.com/azure-functions/python:4-python3.9",
+    "3.10": "mcr.microsoft.com/azure-functions/python:4-python3.10",
+}
 
-    return dockerfile_path
-
-
-def generate_function_app_module_in(deployable_path):
-    """
-    Make an app module that stores the azure function app which will
-    load our service and when a request arrives, uses bentoml's ASGI Middleware
-    to serve the response.
-    """
-    app_module_path = os.path.join(deployable_path, "app")
-    os.mkdir(app_module_path)
-    shutil.copy(APP_INIT_FILE, os.path.join(app_module_path, "__init__.py"))
-    shutil.copy(FUNCTION_JSON_FILE, app_module_path)
+AZURE_ENV = {
+    "AzureWebJobsScriptRoot": "/home/site/wwwroot",
+    "AzureFunctionsJobHost__Logging__Console__IsEnabled": "true",
+}
 
 
 def create_deployable(
     bento_path: str,
     destination_dir: str,
-    bento_metadata: dict,
-    overwrite_deployable=None,
-):
+    bento_metadata: dict[str, Any],
+    overwrite_deployable: bool,
+) -> str:
     """
     The deployable is the bento along with all the modifications (if any)
     requried to deploy to the cloud service.
@@ -66,18 +70,54 @@ def create_deployable(
         Any addition build arguments that need to be passed to the
         docker build command
     """
-    deployable_path = os.path.join(destination_dir, "bentoctl_deployable")
-    docker_context_path = deployable_path
+    deployable_path = Path(destination_dir)
 
     # copy over the bento bundle
-    shutil.copytree(bento_path, deployable_path)
+    copytree(bento_path, deployable_path, dirs_exist_ok=True)
     # Dockerfile
-    dockerfile_path = generate_dockerfile_in(deployable_path, bento_metadata)
-    # host.json file
-    shutil.copy(HOST_JSON_FILE, deployable_path)
-    # local.settings.json file
-    shutil.copy(LOCAL_SETTINGS_FILE, deployable_path)
-    generate_function_app_module_in(deployable_path)
+    bento_metafile = Path(bento_path, "bento.yaml")
+    with bento_metafile.open("r", encoding="utf-8") as metafile:
+        info = BentoInfo.from_yaml_file(metafile)
 
-    additional_build_args = None
-    return dockerfile_path, docker_context_path, additional_build_args
+    enable_grpc = False
+    if hasattr(info.python, "extras_require"):
+        enable_grpc = (
+            info.python.extras_require is not None
+            and "grpc" in info.python.extras_require
+        )
+
+    options = bentoml_cattr.unstructure(info.docker)
+    options["dockerfile_template"] = TEMPLATE_PATH
+    options["base_image"] = AZURE_FUNCTIONS_DOCKER_PYTHON_VERSION_MAPPING[
+        options["python_version"]
+    ]
+    if "env" in options and options["env"] is not None:
+        options["env"] = AZURE_ENV.update(options["env"])
+    else:
+        options["env"] = AZURE_ENV
+
+    dockerfile_path = deployable_path.joinpath("env", "docker", "Dockerfile")
+    with dockerfile_path.open("w", encoding="utf-8") as dockerfile:
+        dockerfile.write(
+            generate_dockerfile(
+                DockerOptions(**options).with_defaults(),
+                str(deployable_path),
+                use_conda=any(
+                    i is not None
+                    for i in bentoml_cattr.unstructure(info.conda).values()
+                ),
+                enable_grpc=enable_grpc,
+            )
+        )
+
+    # host.json file
+    shutil.copy(HOST_JSON_PATH, deployable_path)
+    # local.settings.json file
+    shutil.copy(LOCAL_SETTINGS_PATH, deployable_path)
+
+    app_module_path = deployable_path.joinpath("app")
+    app_module_path.mkdir(exist_ok=True)
+    shutil.copy(APP_INIT_PATH, os.path.join(app_module_path, "__init__.py"))
+    shutil.copy(FUNCTION_JSON_PATH, app_module_path)
+
+    return str(deployable_path)
