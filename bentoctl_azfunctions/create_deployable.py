@@ -16,6 +16,7 @@ else:
 from bentoml._internal.bento.bento import BentoInfo
 from bentoml._internal.bento.build_config import DockerOptions
 from bentoml._internal.bento.gen import generate_dockerfile
+from bentoml._internal.utils.cattr import bentoml_cattr
 
 root_dir = Path(os.path.abspath(os.path.dirname(__file__)), "azurefunctions")
 
@@ -78,6 +79,13 @@ def create_deployable(
     with bento_metafile.open("r", encoding="utf-8") as metafile:
         info = BentoInfo.from_yaml_file(metafile)
 
+    enable_grpc = False
+    if hasattr(info.python, "extras_require"):
+        enable_grpc = (
+            info.python.extras_require is not None
+            and "grpc" in info.python.extras_require
+        )
+
     options = bentoml_cattr.unstructure(info.docker)
     options["dockerfile_template"] = TEMPLATE_PATH
     options["base_image"] = AZURE_FUNCTIONS_DOCKER_PYTHON_VERSION_MAPPING[
@@ -98,6 +106,7 @@ def create_deployable(
                     i is not None
                     for i in bentoml_cattr.unstructure(info.conda).values()
                 ),
+                enable_grpc=enable_grpc,
             )
         )
 
