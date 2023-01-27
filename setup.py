@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='my_pip_package',
-    version="dev",
+    version="0.1",
 
     author='michal.wojdylak',
     author_email='michal.wojdylak@wundermanthompson.com',
