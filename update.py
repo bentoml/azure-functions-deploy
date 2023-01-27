@@ -12,7 +12,7 @@ from utils import (
     console, get_bundle_path,
 )
 
-from azurefunctions import generate_azure_function_deployable, generate_resource_names
+from azurefunctions import generate_azure_function_deployable
 
 
 def update(bento_service_name, function_name, config_json):
