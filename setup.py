@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name='ttttttttt',
+    name='bento_azure_function',
     version="0.1",
 
     author='michal.wojdylak',
@@ -20,9 +20,9 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'deploy_function=ttttttttt.deploy:main',
-            'describe_function=ttttttttt.describe:main',
-            'update_function=ttttttttt.update:main',
+            'deploy_function=azurefunctions.deploy:main',
+            'describe_function=azurefunctions.describe:main',
+            'update_function=azurefunctions.update:main',
         ]
     }
 )

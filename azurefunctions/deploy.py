@@ -4,11 +4,11 @@ import argparse
 from bentoml.saved_bundle import load_bento_service_metadata
 from bentoml.configuration import LAST_PYPI_RELEASE_VERSION
 
-from azurefunctions import (
+from azurefunctions.azure_utils import (
     generate_azure_function_deployable,
     get_docker_login_info,
 )
-from utils import (
+from azurefunctions.utils import (
     get_configuration_value,
     validate_name,
     run_shell_command,

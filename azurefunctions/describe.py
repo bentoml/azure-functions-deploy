@@ -1,7 +1,7 @@
 import argparse
 import os
 
-from utils import run_shell_command, get_configuration_value
+from azurefunctions.utils import run_shell_command, get_configuration_value
 from rich.pretty import pprint
 
 

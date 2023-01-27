@@ -4,7 +4,7 @@ import argparse
 from bentoml.saved_bundle import load_bento_service_metadata
 from bentoml.configuration import LAST_PYPI_RELEASE_VERSION
 
-from utils import (
+from azurefunctions.utils import (
     get_configuration_value,
     run_shell_command,
     build_docker_image,
@@ -12,7 +12,7 @@ from utils import (
     console, get_bundle_path,
 )
 
-from azurefunctions import generate_azure_function_deployable
+from azurefunctions.azure_utils import generate_azure_function_deployable
 
 
 def update(bento_service_name, function_name, config_json):
