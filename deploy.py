@@ -34,13 +34,13 @@ def deploy(bento_service_name: str, new_function_name: str, config_json: str) ->
 
     with console.status("Creating resources in Azure"):
         if run_shell_command(
-            [
-                "az",
-                "group",
-                "exists",
-                "--name",
-                azure_config["resource_group"],
-            ]
+                [
+                    "az",
+                    "group",
+                    "exists",
+                    "--name",
+                    azure_config["resource_group"],
+                ]
         )[0]:
             console.print(f'Azure resource group [b]{azure_config["resource_group"]}[/b]')
         else:
@@ -171,7 +171,7 @@ def deploy(bento_service_name: str, new_function_name: str, config_json: str) ->
     set_cors_settings(new_function_name, azure_config["resource_group"])
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(
         prog="deploy",
         description="Deploy the bentoml bundle on Azure Functions",
@@ -191,5 +191,10 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    deploy(bento_service_name=args.bento_service_name, new_function_name=args.new_function_name, config_json=args.config_json)
+    deploy(bento_service_name=args.bento_service_name, new_function_name=args.new_function_name,
+           config_json=args.config_json)
     console.print("[bold green]Deployment complete![/]")
+
+
+if __name__ == "__main__":
+    main()

@@ -9,13 +9,14 @@ from utils import (
     run_shell_command,
     build_docker_image,
     push_docker_image_to_repository,
-    console,
+    console, get_bundle_path,
 )
 
 from azurefunctions import generate_azure_function_deployable, generate_resource_names
 
 
-def update(bento_bundle_path, deployment_name, config_json):
+def update(bento_service_name, function_name, config_json):
+    bento_bundle_path = get_bundle_path(bento_service_name=bento_service_name)
     bento_metadata = load_bento_service_metadata(bento_bundle_path)
 
     azure_config = get_configuration_value(config_json)
@@ -24,13 +25,6 @@ def update(bento_bundle_path, deployment_name, config_json):
         f"{bento_metadata.name}-{bento_metadata.version}-azure-deployable",
     )
     generate_azure_function_deployable(bento_bundle_path, deployable_path, azure_config)
-    (
-        resource_group_name,
-        storage_account_name,
-        function_plan_name,
-        function_name,
-        acr_name,
-    ) = generate_resource_names(deployment_name)
 
     run_shell_command(
         [
@@ -38,13 +32,13 @@ def update(bento_bundle_path, deployment_name, config_json):
             "acr",
             "login",
             "--name",
-            acr_name,
+            azure_config["container_registry"],
             "--resource-group",
-            resource_group_name,
+            azure_config["resource_group"],
         ]
     )
     docker_image_tag = (
-        f"{acr_name}.azurecr.io/{bento_metadata.name}:{bento_metadata.version}".lower()
+        f'{azure_config["container_registry"]}.azurecr.io/{bento_metadata.name}:{bento_metadata.version}'.lower()
     )
     with console.status("Building and Pushing image"):
         major, minor, _ = bento_metadata.env.python_version.split(".")
@@ -71,7 +65,7 @@ def update(bento_bundle_path, deployment_name, config_json):
                 "--name",
                 function_name,
                 "--resource-group",
-                resource_group_name,
+                azure_config["resource_group"],
                 "--docker-custom-image-name",
                 docker_image_tag,
             ]
@@ -79,25 +73,31 @@ def update(bento_bundle_path, deployment_name, config_json):
     console.print(f"Updated Azure function [b]{function_name}[/b]")
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(
         prog="update",
         description="Update bentoml bundle on Azure Functions",
         epilog="Check out https://github.com/bentoml/azure-functions-deploy/"
-        "blob/main/README.md to know more",
+               "blob/main/README.md to know more",
     )
-    parser.add_argument("bento_bundle_path", help="Path to bentoml bundle")
     parser.add_argument(
-        "deployment_name", help="The name you want to use for your deployment"
+        "bento_service_name", help="The name of Bento service you want to deploy eq. [PytorchService:latest]"
+    )
+    parser.add_argument(
+        "function_name", help="The name of new Azure function you want to deploy."
     )
     parser.add_argument(
         "config_json",
-        help="(optional) The config file for your deployment",
+        help="(optional) The config file for your deployment. Default azure_config.json",
         default=os.path.join(os.getcwd(), "azure_config.json"),
         nargs="?",
     )
     args = parser.parse_args()
 
-    update(args.bento_bundle_path, args.deployment_name, args.config_json)
+    update(args.bento_service_name, args.function_name, args.config_json)
 
-    console.print(f"[bold green]{args.deployment_name} updation complete![/]")
+    console.print(f"[bold green]{args.function_name} update complete![/]")
+
+
+if __name__ == "__main__":
+    main()

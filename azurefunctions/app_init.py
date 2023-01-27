@@ -28,7 +28,6 @@ class BentoAzureServer:
         )
 
         for api in self.bento_service.inference_apis:
-
             # pass request from Wsgi to Bentoml api service
             def passthrough_function():
                 req = HTTPRequest.from_flask_request(request)

@@ -8,11 +8,14 @@ import shutil
 from rich.console import Console
 
 import re
+
 # init rich console
 console = Console(highlight=False)
 
+
 def validate_name(value: str) -> str:
-    return  re.sub(re.compile("[^a-zA-Z0-9-]"), "-", value)
+    return re.sub(re.compile("[^a-zA-Z0-9-]"), "-", value)
+
 
 def run_shell_command(command, cwd=None, env=None, shell_mode=False):
     proc = subprocess.Popen(
@@ -94,7 +97,7 @@ def get_configuration_value(config_file):
 
 
 def build_docker_image(
-    context_path, image_tag, dockerfile="Dockerfile", additional_build_args=None
+        context_path, image_tag, dockerfile="Dockerfile", additional_build_args=None
 ):
     docker_client = docker.from_env()
     try:
@@ -109,7 +112,7 @@ def build_docker_image(
 
 
 def push_docker_image_to_repository(
-    repository, image_tag=None, username=None, password=None
+        repository, image_tag=None, username=None, password=None
 ):
     docker_client = docker.from_env()
     docker_push_kwags = {"repository": repository, "tag": image_tag}
@@ -142,6 +145,7 @@ def is_present(project_path):
             print("Using existing deployable!")
             return True
     return False
+
 
 def get_bundle_path(bento_service_name: str) -> str:
     bundle_bundle_path, _ = run_shell_command(

@@ -20,8 +20,9 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'deploy=bento_azure_functions.deploy',
-            'describe=bento_azure_functions.describe',
+            'deploy=bento_azure_functions.deploy:main',
+            'describe=bento_azure_functions.describe:main',
+            'describe=bento_azure_functions.update:main',
         ]
     }
 )
