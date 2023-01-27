@@ -20,9 +20,9 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'deploy_function=azure-function-deploy.deploy:main',
-            'describe_function=azure-function-deploy.describe:main',
-            'update_function=azure-function-deploy.update:main',
+            'deploy_function=deploy:main',
+            'describe_function=describe:main',
+            'update_function=update:main',
         ]
     }
 )
