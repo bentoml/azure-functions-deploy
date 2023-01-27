@@ -22,7 +22,7 @@ setup(
         'console_scripts': [
             'deploy=bento_azure_functions.deploy:main',
             'describe=bento_azure_functions.describe:main',
-            'describe=bento_azure_functions.update:main',
+            'update=bento_azure_functions.update:main',
         ]
     }
 )
