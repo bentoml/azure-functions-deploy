@@ -1,14 +1,15 @@
 import argparse
+import os
 
-from utils import run_shell_command
+from utils import run_shell_command, get_configuration_value
 from azurefunctions import generate_resource_names
 from rich.pretty import pprint
 
 
-def describe(deployment_name, azure_config=None):
-    (resource_group_name, _, _, function_name, _) = generate_resource_names(
-        deployment_name
-    )
+def describe(function_name: str, azure_config: str):
+
+    azure_config = get_configuration_value(azure_config)
+
     show_function_result, _ = run_shell_command(
         [
             "az",
@@ -17,7 +18,7 @@ def describe(deployment_name, azure_config=None):
             "--name",
             function_name,
             "--resource-group",
-            resource_group_name,
+            azure_config["resource_group"],
         ]
     )
     keys = [
@@ -45,8 +46,16 @@ if __name__ == "__main__":
         epilog="Check out https://github.com/bentoml/azure-functions-deploy/"
         "blob/main/README.md to know more",
     )
-    parser.add_argument("deployment_name", help="Name of the App to be deleted")
+    parser.add_argument(
+        "function_name", help="The name of new Azure function you want to deploy."
+    )
+    parser.add_argument(
+        "config_json",
+        help="(optional) The config file for your deployment. Default azure_config.json",
+        default=os.path.join(os.getcwd(), "azure_config.json"),
+        nargs="?",
+    )
 
     args = parser.parse_args()
-    info_json = describe(args.deployment_name)
+    info_json = describe(function_name=args.function_name, azure_config=args.azure_config)
     pprint(info_json)

@@ -7,10 +7,12 @@ import shutil
 
 from rich.console import Console
 
-
+import re
 # init rich console
 console = Console(highlight=False)
 
+def validate_name(value: str) -> str:
+    return  re.sub(re.compile("[^a-zA-Z0-9-]"), "-", value)
 
 def run_shell_command(command, cwd=None, env=None, shell_mode=False):
     proc = subprocess.Popen(
@@ -140,3 +142,15 @@ def is_present(project_path):
             print("Using existing deployable!")
             return True
     return False
+
+def get_bundle_path(bento_service_name: str) -> str:
+    bundle_bundle_path, _ = run_shell_command(
+        command=[
+            "bentoml",
+            "get",
+            bento_service_name,
+            "--print-location",
+            "-q",
+        ],
+    )
+    return bundle_bundle_path[:-1]
