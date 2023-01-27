@@ -1,14 +1,21 @@
 from setuptools import setup
 
-from my_pip_package import __version__
 
 setup(
     name='my_pip_package',
-    version=__version__,
+    version="dev",
 
-    url='_',
-    author='_',
-    author_email='_',
+    author='michal.wojdylak',
+    author_email='michal.wojdylak@wundermanthompson.com',
 
-    py_modules=['my_pip_package'],
+    install_requires=[
+        "bentoml==0.13.2",
+        "azure-functions",
+        "flask",
+        "docker",
+        "pandas",
+        "rich",
+        "numpy",
+        "pillow",
+    ],
 )

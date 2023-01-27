@@ -2,7 +2,6 @@ import argparse
 import os
 
 from utils import run_shell_command, get_configuration_value
-from azurefunctions import generate_resource_names
 from rich.pretty import pprint
 
 
