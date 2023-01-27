@@ -1,5 +1,5 @@
 {
-  "location": "< replace with resource location that is setup in azure>",
+  "location": "westeurope",
   "min_instances": 1,
   "max_burst": 20,
   "function_sku": "B1",
