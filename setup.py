@@ -1,8 +1,7 @@
 from setuptools import setup
 
-
 setup(
-    name='my_pip_package',
+    name='bento_azure_functions',
     version="0.1",
 
     author='michal.wojdylak',
@@ -18,4 +17,11 @@ setup(
         "numpy",
         "pillow",
     ],
+
+    entry_points={
+        'console_scripts': [
+            'deploy=bento_azure_functions.deploy',
+            'describe=bento_azure_functions.describe',
+        ]
+    }
 )
