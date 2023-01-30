@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='bento_azure_function',
-    version="0.1",
+    version="0.2",
 
     author='michal.wojdylak',
     author_email='michal.wojdylak@wundermanthompson.com',
