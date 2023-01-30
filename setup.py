@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='bento_azure_function',
-    version="0.2",
+    version="0.3",
 
     author='michal.wojdylak',
     author_email='michal.wojdylak@wundermanthompson.com',
@@ -18,7 +18,11 @@ setup(
         "pillow",
     ],
     include_package_data=True,
-    data_files=[('azurefunctions', ['azurefunctions/host.json', 'azurefunctions/local.settings.json'])],
+    data_files=[('azurefunctions', [
+        'azurefunctions/host.json',
+        'azurefunctions/local.settings.json',
+        'azurefunctions/Dokcerfile'
+    ])],
     entry_points={
         'console_scripts': [
             'deploy_function=azurefunctions.deploy:main',
