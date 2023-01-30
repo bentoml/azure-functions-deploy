@@ -18,7 +18,7 @@ setup(
         "pillow",
     ],
     include_package_data=True,
-    data_files=[('azurefunctions', ['host.json', 'local.settings.json'])],
+    data_files=[('azurefunctions', ['azurefunctions/host.json', 'azurefunctions/local.settings.json'])],
     entry_points={
         'console_scripts': [
             'deploy_function=azurefunctions.deploy:main',
