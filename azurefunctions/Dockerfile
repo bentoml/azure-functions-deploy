@@ -5,6 +5,7 @@ ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
 
 # Instal Azure Functions with BentoML 0.13.2 LTS
 RUN pip install azure-functions install bentoml==0.13.2 typing_extensions
+RUN apt-get install -y gcc # pycocotools for detectron2 https://stackoverflow.com/a/72980456
 
 # https://github.com/MicrosoftDocs/azure-docs/issues/26761
 # Copying BentoService to Azure function specific directory
