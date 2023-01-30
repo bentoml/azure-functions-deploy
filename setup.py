@@ -21,7 +21,7 @@ setup(
     data_files=[('azurefunctions', [
         'azurefunctions/host.json',
         'azurefunctions/local.settings.json',
-        'azurefunctions/Dokcerfile'
+        'azurefunctions/Dockerfile'
     ])],
     entry_points={
         'console_scripts': [
