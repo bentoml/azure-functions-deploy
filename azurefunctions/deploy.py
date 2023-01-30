@@ -20,16 +20,16 @@ from azurefunctions.utils import (
 )
 
 
-def deploy(bento_service_name: str, new_function_name: str, config_json: str) -> None:
-    bento_bundle_path = get_bundle_path(bento_service_name=bento_service_name)
-    bento_metadata = load_bento_service_metadata(bento_bundle_path)
+def deploy(bento_service_path: str, new_function_name: str, config_json: str) -> None:
+    # bento_bundle_path = get_bundle_path(bento_service_name=bento_service_name)
+    bento_metadata = load_bento_service_metadata(bento_service_path)
 
     azure_config = get_configuration_value(config_json)
     deployable_path = os.path.join(
         os.path.curdir,
         f".cache/{bento_metadata.name}-{bento_metadata.version}-azure-deployable",
     )
-    generate_azure_function_deployable(bento_bundle_path, deployable_path, azure_config)
+    generate_azure_function_deployable(bento_service_path, deployable_path, azure_config)
     console.print("Created Azure function deployable")
 
     with console.status("Creating resources in Azure"):
@@ -178,7 +178,7 @@ def main():
         epilog="Check out https://github.com/bentoml/azure-functions-deploy/blob/main/README.md to know more",
     )
     parser.add_argument(
-        "bento_service_name", help="The name of Bento service you want to deploy eq. [PytorchService:latest]"
+        "bento_service_path", help="The path of Bento service you want to deploy"
     )
     parser.add_argument(
         "new_function_name", help="The name of new Azure function you want to deploy."
@@ -191,7 +191,7 @@ def main():
     )
     args = parser.parse_args()
 
-    deploy(bento_service_name=args.bento_service_name, new_function_name=args.new_function_name,
+    deploy(bento_service_path=args.bento_service_path, new_function_name=args.new_function_name,
            config_json=args.config_json)
     console.print("[bold green]Deployment complete![/]")
 
